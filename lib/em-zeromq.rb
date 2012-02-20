@@ -33,16 +33,20 @@ module EM::ZeroMQ
       end
     end
 
-    map_socket_option :hwm,          ZMQ::HWM
-    map_socket_option :swap,         ZMQ::SWAP
-    map_socket_option :affinity,     ZMQ::AFFINITY
-    map_socket_option :identity,     ZMQ::IDENTITY
-    map_socket_option :sndbuf,       ZMQ::SNDBUF
-    map_socket_option :rcvbuf,       ZMQ::RCVBUF
+    map_socket_option :hwm,               ZMQ::HWM
+    map_socket_option :swap,              ZMQ::SWAP
+    map_socket_option :affinity,          ZMQ::AFFINITY
+    map_socket_option :identity,          ZMQ::IDENTITY
+    map_socket_option :sndbuf,            ZMQ::SNDBUF
+    map_socket_option :rcvbuf,            ZMQ::RCVBUF
 
-    map_socket_option :rate,         ZMQ::RATE
-    map_socket_option :recovery_ivl, ZMQ::RECOVERY_IVL
-    map_socket_option :mcast_loop,   ZMQ::MCAST_LOOP
+    map_socket_option :rate,              ZMQ::RATE
+    map_socket_option :recovery_ivl,      ZMQ::RECOVERY_IVL
+    map_socket_option :mcast_loop,        ZMQ::MCAST_LOOP
+    map_socket_option :linger,            ZMQ::LINGER
+    map_socket_option :reconnect_ivl,     ZMQ::RECONNECT_IVL
+    map_socket_option :reconnect_ivl_max, ZMQ::RECONNECT_IVL_MAX
+    map_socket_option :backlog,           ZMQ::BACKLOG
 
     def initialize zmq_socket, &block
       @zmq_socket = zmq_socket
@@ -54,13 +58,6 @@ module EM::ZeroMQ
 
       # any optional setup junk.
       self.instance_eval(&block) if block
-    end
-
-    def attach handler, socket
-      EM.watch(@fileno, handler, socket) do |connection|
-        connection.notify_readable = READABLES.include?(type)
-        connection.notify_writable = WRITABLES.include?(type)
-      end
     end
 
     def bind *args, handler
@@ -104,6 +101,16 @@ module EM::ZeroMQ
       raise TypeError, 'not a ZMQ::SUB socket' if type != ZMQ::SUB
       self.tap{zmq_socket.setsockopt(ZMQ::UNSUBSCRIBE, what.to_s)}
     end
+
+    private
+
+    def attach handler, socket
+      EM.watch(@fileno, handler, socket) do |connection|
+        connection.notify_readable = READABLES.include?(type)
+        connection.notify_writable = WRITABLES.include?(type)
+      end
+    end
+
   end # Socket
 
   class Connection < EM::Connection

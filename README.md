@@ -32,6 +32,68 @@ EM.run do
 end
 ```
 
+## API
+
+```
+EM::ZeroMQ::Context
+
+public:
+
+  .new(threads)
+  #socket(type)
+
+EM::ZeroMQ::Socket
+
+public:
+
+  #bind(address, handler)
+  #connect(address, handler)
+  #subscribe(what)
+  #unsubscribe(what)
+  #send(message)
+
+  #get_hwm
+  #set_hwm(value)
+  #get_swap
+  #set_swap(value)
+  #get_affinity
+  #set_affinity(value)
+  #get_identity
+  #set_identity(value)
+  #get_sndbuf
+  #set_sndbuf(value)
+  #get_rcvbuf
+  #set_rcvbuf(value)
+  #get_rate
+  #set_rate(value)
+  #get_recovery_ivl
+  #set_recovery_ivl(value)
+  #get_mcast_loop
+  #set_mcast_loop(value)
+  #get_linger
+  #set_linger(value)
+  #get_reconnect_ivl
+  #set_reconnect_ivl(value)
+  #get_reconnect_ivl_max
+  #set_reconnect_ivl_max(value)
+  #get_backlog
+  #set_backlog(value)
+ 
+semi-public: 
+  #readable?
+  #writable?
+  #message_parts?
+  #recv
+
+EM::ZeroMQ::Connection
+
+public:
+
+  #on_readable
+  #on_writable
+  #send(message)
+```
+
 # See Also
 [https://github.com/andrewvc/em-zeromq](https://github.com/andrewvc/em-zeromq)
 
