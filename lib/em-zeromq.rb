@@ -1,6 +1,5 @@
 require 'zmq'
 require 'eventmachine'
-require 'fiber'
 
 module EM::ZeroMQ
 
@@ -141,7 +140,7 @@ module EM::ZeroMQ
     #       into a blocked or exceptional state - need to look into it.
     def recv_message
       while socket.readable?
-        while true
+        loop do
           message = socket.recv
           message && on_readable(message)
           break unless socket.message_parts?
