@@ -115,6 +115,7 @@ module EM::ZeroMQ
 
     def send message
       queue.push(message)
+      self.notify_writable = true
     end
 
     def on_readable message
@@ -130,8 +131,10 @@ module EM::ZeroMQ
 
     def send_message
       if message = queue.shift
-        socket.send(message)
         on_writable
+        socket.send(message)
+      else
+        self.notify_writable = false
       end
     end
 
