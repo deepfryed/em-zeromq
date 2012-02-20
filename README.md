@@ -2,6 +2,11 @@
 
 A simple zeromq binding running on eventmachine.
 
+## Dependencies
+
+* zmq
+* eventmachine
+
 ## Example
 
 ```ruby
