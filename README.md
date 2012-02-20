@@ -32,5 +32,8 @@ EM.run do
 end
 ```
 
+# See Also
+[https://github.com/andrewvc/em-zeromq](https://github.com/andrewvc/em-zeromq)
+
 # License
 [Creative Commons Attribution - CC BY](http://creativecommons.org/licenses/by/3.0)
