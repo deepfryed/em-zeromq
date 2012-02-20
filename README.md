@@ -5,7 +5,7 @@ A simple zeromq binding running on eventmachine.
 ## Example
 
 ```ruby
-require 'lib/em-zeromq'
+require 'em-zeromq'
 
 class MyHandler < EM::ZeroMQ::Connection
   def on_readable message
