@@ -13,7 +13,8 @@ module EM::ZeroMQ
     end
 
     def socket type, &block
-      Socket.new(zmq_context.socket(type), &block)
+      socket = Socket.new(zmq_context.socket(type))
+      block  ? block && block.call(socket) : socket
     end
   end
 
@@ -48,16 +49,13 @@ module EM::ZeroMQ
     map_socket_option :reconnect_ivl_max, ZMQ::RECONNECT_IVL_MAX
     map_socket_option :backlog,           ZMQ::BACKLOG
 
-    def initialize zmq_socket, &block
+    def initialize zmq_socket
       @zmq_socket = zmq_socket
       @fileno     = zmq_socket.getsockopt(ZMQ::FD)
       @type       = zmq_socket.getsockopt(ZMQ::TYPE)
 
       # default to a high enough HWM
       set_hwm(1_000_000)
-
-      # any optional setup junk.
-      self.instance_eval(&block) if block
     end
 
     def bind *args, handler

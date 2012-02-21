@@ -21,9 +21,9 @@ end
 EM.run do
   context    = EM::ZeroMQ::Context.new
   publisher  = context.socket(ZMQ::PUB).bind('tcp://*:5555', EM::ZeroMQ::Connection)
-  subscriber = context.socket(ZMQ::SUB) do
-    subscribe('')
-    connect('tcp://*:5555', MyHandler)
+  subscriber = context.socket(ZMQ::SUB) do |socket|
+    socket.subscribe('')
+    socket.connect('tcp://*:5555', MyHandler)
   end
 
   EM.add_periodic_timer(1) do

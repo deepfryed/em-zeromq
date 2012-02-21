@@ -7,10 +7,17 @@ describe 'em-zeromq pub sub' do
     handler  = Class.new(TestHandler)
 
     EM.run do
-      pub = context.socket(ZMQ::PUB).bind('tcp://*:5555', handler)
-      sub = context.socket(ZMQ::SUB).subscribe('').connect('tcp://*:5555', handler)
 
-      schedule(0.05) do
+      pub = context.socket(ZMQ::PUB) do |socket|
+        socket.bind('tcp://*:5555', handler)
+      end
+
+      sub = context.socket(ZMQ::SUB) do |socket|
+        socket.subscribe('')
+        socket.connect('tcp://*:5555', handler)
+      end
+
+      schedule(0.1) do
         5.times { pub.send('hello') }
       end
     end
