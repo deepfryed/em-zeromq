@@ -20,14 +20,18 @@ end
 
 EM.run do
   context    = EM::ZeroMQ::Context.new
-  publisher  = context.socket(ZMQ::PUB).bind('tcp://*:5555', EM::ZeroMQ::Connection)
-  subscriber = context.socket(ZMQ::SUB) do |socket|
+  publisher1 = context.socket(ZMQ::PUB).bind('tcp://*:5555')
+  publisher2 = context.socket(ZMQ::PUB).bind('tcp://*:5556')
+
+  context.socket(ZMQ::SUB, MyHandler) do |socket|
     socket.subscribe('')
-    socket.connect('tcp://*:5555', MyHandler)
+    socket.connect('tcp://*:5555')
+    socket.connect('tcp://*:5556')
   end
 
   EM.add_periodic_timer(1) do
-    publisher.send("hello")
+    publisher1.send("hello 1")
+    publisher2.send("hello 2")
   end
 end
 ```
