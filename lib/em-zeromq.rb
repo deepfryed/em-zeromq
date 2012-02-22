@@ -16,6 +16,10 @@ module EM::ZeroMQ
       socket = Socket.new(zmq_context.socket(type))
       block  ? block && block.call(socket) : socket
     end
+
+    def close
+      zmq_socket.close
+    end
   end
 
   class Socket
@@ -119,6 +123,7 @@ module EM::ZeroMQ
   end # Socket
 
   class Connection < EM::Connection
+    attr_reader :socket
 
     def initialize socket, *args
       @queue  = []
@@ -139,7 +144,7 @@ module EM::ZeroMQ
 
     private
 
-    attr_reader :queue, :socket, :on_writable
+    attr_reader :queue, :on_writable
 
     def send_message
       if message = queue.shift
