@@ -7,7 +7,7 @@ describe 'em-zeromq push pull' do
     handler  = Class.new(TestHandler)
 
     EM.run do
-      push = context.socket(ZMQ::PUSH).bind('tcp://*:5555',    handler)
+      push = context.socket(ZMQ::PUSH).bind('tcp://*:5555')
       pull = context.socket(ZMQ::PULL).connect('tcp://*:5555', handler)
 
       schedule(0.05) do

@@ -58,7 +58,14 @@ module EM::ZeroMQ
       set_hwm(1_000_000)
     end
 
-    def bind uri, handler, *args
+    def bind uri, handler = nil, *args
+
+      # bind normally does not require a handler, it should default to a vanilla handler
+      unless handler.kind_of?(Class) && handler < EM::ZeroMQ::Connection
+        handler && args.unshift(handler)
+        handler = EM::ZeroMQ::Connection
+      end
+
       attach(handler, self.tap {zmq_socket.bind(uri)}, args)
     end
 
