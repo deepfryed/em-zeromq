@@ -8,21 +8,24 @@ describe 'em-zeromq pub sub' do
 
     EM.run do
 
-      pub = context.socket(ZMQ::PUB) do |socket|
-        socket.bind('tcp://*:5555', handler)
-      end
+      pub1 = context.socket(ZMQ::PUB).bind('tcp://*:5555')
+      pub2 = context.socket(ZMQ::PUB).bind('tcp://*:5556')
 
-      sub = context.socket(ZMQ::SUB) do |socket|
+      context.socket(ZMQ::SUB, handler) do |socket|
         socket.subscribe('')
-        socket.connect('tcp://*:5555', handler)
+        socket.connect('tcp://*:5555')
+        socket.connect('tcp://*:5556')
       end
 
-      schedule(0.1) do
-        5.times { pub.send('hello') }
+      schedule(0.2) do
+        5.times do
+          pub1.send('p1')
+          pub2.send('p2')
+        end
       end
     end
 
-    assert_equal 5,       handler.messages.size
-    assert_equal 'hello', handler.messages.first
+    assert_equal 10,        handler.messages.size
+    assert_equal %w(p1 p2), handler.messages.uniq.sort
   end
 end

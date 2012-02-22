@@ -43,17 +43,18 @@ EM::ZeroMQ::Context
 public:
 
   .new(threads)
-  #socket(type)
+  #socket(type, handler = nil, *args)
 
 EM::ZeroMQ::Socket
 
 public:
 
-  #bind(address, handler)
-  #connect(address, handler)
+  #bind(address)
+  #connect(address)
   #subscribe(what)
   #unsubscribe(what)
   #send(message)
+  #attach(handler, *args)
 
   #get_hwm
   #set_hwm(value)

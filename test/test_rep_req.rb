@@ -14,10 +14,10 @@ describe 'em-zeromq rep req' do
     handler2 = Class.new(TestHandler)
 
     EM.run do
-      rep = context.socket(ZMQ::REP).bind('tcp://*:5555',    handler1)
-      req = context.socket(ZMQ::REQ).connect('tcp://*:5555', handler2)
+      rep = context.socket(ZMQ::REP, handler1).bind('tcp://*:5555')
+      req = context.socket(ZMQ::REQ, handler2).connect('tcp://*:5555')
 
-      schedule(0.05) do
+      schedule(0.2) do
         5.times { req.send('hello') }
       end
     end

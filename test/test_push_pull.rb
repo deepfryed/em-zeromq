@@ -8,9 +8,9 @@ describe 'em-zeromq push pull' do
 
     EM.run do
       push = context.socket(ZMQ::PUSH).bind('tcp://*:5555')
-      pull = context.socket(ZMQ::PULL).connect('tcp://*:5555', handler)
+      pull = context.socket(ZMQ::PULL, handler).connect('tcp://*:5555')
 
-      schedule(0.05) do
+      schedule(0.2) do
         5.times { push.send('hello') }
       end
     end

@@ -12,8 +12,8 @@ module EM::ZeroMQ
       @zmq_context = ZMQ::Context.new(threads)
     end
 
-    def socket type, &block
-      socket = Socket.new(zmq_context.socket(type))
+    def socket type, *args, &block
+      socket = Socket.new(zmq_context.socket(type), *args)
       block  ? block && block.call(socket) : socket
     end
 
@@ -23,7 +23,7 @@ module EM::ZeroMQ
   end
 
   class Socket
-    attr_reader :zmq_socket, :type
+    attr_reader :zmq_socket, :type, :connection
 
     READABLES = [ZMQ::SUB, ZMQ::PULL, ZMQ::ROUTER, ZMQ::DEALER, ZMQ::REP, ZMQ::REQ]
     WRITABLES = [ZMQ::PUB, ZMQ::PUSH, ZMQ::ROUTER, ZMQ::DEALER, ZMQ::REP, ZMQ::REQ]
@@ -53,28 +53,27 @@ module EM::ZeroMQ
     map_socket_option :reconnect_ivl_max, ZMQ::RECONNECT_IVL_MAX
     map_socket_option :backlog,           ZMQ::BACKLOG
 
-    def initialize zmq_socket
+    def initialize zmq_socket, *args
       @zmq_socket = zmq_socket
       @fileno     = zmq_socket.getsockopt(ZMQ::FD)
       @type       = zmq_socket.getsockopt(ZMQ::TYPE)
 
       # default to a high enough HWM
       set_hwm(1_000_000)
-    end
 
-    def bind uri, handler = nil, *args
-
-      # bind normally does not require a handler, it should default to a vanilla handler
-      unless handler.kind_of?(Class) && handler < EM::ZeroMQ::Connection
-        handler && args.unshift(handler)
-        handler = EM::ZeroMQ::Connection
+      if args.first.kind_of?(Class) && args.first < EM::ZeroMQ::Connection
+        @connection = attach(args.shift, *args)
       end
-
-      attach(handler, self.tap {zmq_socket.bind(uri)}, args)
     end
 
-    def connect uri, handler, *args
-      attach(handler, self.tap {zmq_socket.connect(uri)}, args)
+    def bind uri
+      zmq_socket.bind(uri)
+      @connection ? @connection : attach
+    end
+
+    def connect uri
+      zmq_socket.connect(uri)
+      @connection ? @connection : attach
     end
 
     def readable?
@@ -111,15 +110,19 @@ module EM::ZeroMQ
       self.tap{zmq_socket.setsockopt(ZMQ::UNSUBSCRIBE, what.to_s)}
     end
 
+    def attach handler = nil, *args
+      @connection.unbind if @connection
+      @connection = em_attach(handler || EM::ZeroMQ::Connection, *args)
+    end
+
     private
 
-    def attach handler, socket, args
-      EM.watch(@fileno, handler, socket, *args) do |connection|
+    def em_attach handler, *args
+      EM.watch(@fileno, handler, self, *args) do |connection|
         connection.notify_readable = READABLES.include?(type)
         connection.notify_writable = WRITABLES.include?(type)
       end
     end
-
   end # Socket
 
   class Connection < EM::Connection
@@ -156,8 +159,6 @@ module EM::ZeroMQ
     end
 
     # NOTE: We need to read all messages, since it is edge triggered.
-    # TODO: At very high rates, this seems to lose notifications resulting in zmq socket going
-    #       into a blocked or exceptional state - need to look into it.
     def recv_message
       while socket.readable?
         loop do
