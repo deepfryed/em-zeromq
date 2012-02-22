@@ -58,12 +58,12 @@ module EM::ZeroMQ
       set_hwm(1_000_000)
     end
 
-    def bind *args, handler
-      attach(handler, self.tap {zmq_socket.bind(*args)})
+    def bind uri, handler, *args
+      attach(handler, self.tap {zmq_socket.bind(uri)}, args)
     end
 
-    def connect *args, handler
-      attach(handler, self.tap {zmq_socket.connect(*args)})
+    def connect uri, handler, *args
+      attach(handler, self.tap {zmq_socket.connect(uri)}, args)
     end
 
     def readable?
@@ -102,8 +102,8 @@ module EM::ZeroMQ
 
     private
 
-    def attach handler, socket
-      EM.watch(@fileno, handler, socket) do |connection|
+    def attach handler, socket, args
+      EM.watch(@fileno, handler, socket, *args) do |connection|
         connection.notify_readable = READABLES.include?(type)
         connection.notify_writable = WRITABLES.include?(type)
       end
@@ -113,7 +113,7 @@ module EM::ZeroMQ
 
   class Connection < EM::Connection
 
-    def initialize socket
+    def initialize socket, *args
       @queue  = []
       @socket = socket
     end
