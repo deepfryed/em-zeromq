@@ -58,9 +58,10 @@ module EM::ZeroMQ
       @fileno     = zmq_socket.getsockopt(ZMQ::FD)
       @type       = zmq_socket.getsockopt(ZMQ::TYPE)
 
-      # default to a high enough HWM
+      # default high water mark.
       set_hwm(1_000_000)
 
+      # setup handler if one provided.
       if args.first.kind_of?(Class) && args.first < EM::ZeroMQ::Connection
         @connection = attach(args.shift, *args)
       end
@@ -150,12 +151,9 @@ module EM::ZeroMQ
     attr_reader :queue, :on_writable
 
     def send_message
-      if message = queue.shift
-        on_writable
-        socket.send(message)
-      else
-        self.notify_writable = false
-      end
+      return self.notify_writable = false if queue.empty?
+      on_writable
+      socket.send(queue.shift)
     end
 
     # NOTE: We need to read all messages, since it is edge triggered.
