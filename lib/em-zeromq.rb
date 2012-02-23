@@ -112,7 +112,7 @@ module EM::ZeroMQ
     end
 
     def attach handler = nil, *args
-      @connection.unbind if @connection
+      @connection.detach if @connection
       @connection = em_attach(handler || EM::ZeroMQ::Connection, *args)
     end
 
