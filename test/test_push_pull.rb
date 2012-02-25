@@ -16,6 +16,6 @@ describe 'em-zeromq push pull' do
     end
 
     assert_equal 5,       handler.messages.size
-    assert_equal 'hello', handler.messages.first
+    assert_equal 'hello', handler.messages.first.first
   end
 end

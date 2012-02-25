@@ -13,8 +13,8 @@ A simple zeromq binding running on eventmachine.
 require 'em-zeromq'
 
 class MyHandler < EM::ZeroMQ::Connection
-  def on_readable message
-    puts message
+  def on_readable messages
+    puts messages.join("|")
   end
 end
 
@@ -32,6 +32,7 @@ EM.run do
   EM.add_periodic_timer(1) do
     publisher1.send("hello 1")
     publisher2.send("hello 2")
+    publisher2.send("hello 3", "hello 4")
   end
 end
 ```
@@ -57,7 +58,6 @@ public:
   #connect(address)
   #subscribe(what)
   #unsubscribe(what)
-  #send(message)
   #attach(handler, *args)
 
   #get_hwm
@@ -88,6 +88,7 @@ public:
   #set_backlog(value)
  
 semi-public: 
+  #send(message, flags)
   #readable?
   #writable?
   #message_parts?
@@ -97,9 +98,9 @@ EM::ZeroMQ::Connection
 
 public:
 
-  #on_readable
+  #on_readable(messages)
   #on_writable
-  #send(message)
+  #send(*messages)
 ```
 
 # See Also

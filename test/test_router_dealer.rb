@@ -18,12 +18,12 @@ describe 'em-zeromq router dealerl' do
       end
 
       schedule(0.2) do
-        5.times { router.send(['dealer1', 'hello'])}
+        5.times { router.send('dealer1', 'hello')}
       end
     end
 
     assert_equal 5,       handler.messages.size
-    assert_equal 'hello', handler.messages.first
+    assert_equal 'hello', handler.messages.first.first
   end
 
   it 'should work with router-rep' do
@@ -47,11 +47,11 @@ describe 'em-zeromq router dealerl' do
       end
 
       schedule(0.2) do
-        5.times { dealer.send(['rep1', '', 'hello'])}
+        5.times { dealer.send('rep1', '', 'hello', 'world')}
       end
     end
 
-    assert_equal 5,       handler.messages.size
-    assert_equal 'hello', handler.messages.first
+    assert_equal 5, handler.messages.size
+    assert_equal %w(hello world), handler.messages.first
   end
 end

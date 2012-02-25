@@ -23,8 +23,8 @@ describe 'em-zeromq rep req' do
     end
 
     assert_equal 5,       handler1.messages.size
-    assert_equal 'hello', handler1.messages.first
+    assert_equal 'hello', handler1.messages.first.first
     assert_equal 5,       handler2.messages.size
-    assert_equal 'world', handler2.messages.first
+    assert_equal 'world', handler2.messages.first.first
   end
 end

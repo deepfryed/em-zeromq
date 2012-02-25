@@ -3,7 +3,7 @@ require 'eventmachine'
 
 module EM::ZeroMQ
 
-  VERSION = '0.1.0'
+  VERSION = '0.2.0'
 
   class Context
     attr_reader :zmq_context
@@ -145,8 +145,12 @@ module EM::ZeroMQ
       @queue, @socket  = [], socket
     end
 
-    def send message
-      queue.push(message)
+    def send *messages
+      return if messages.size < 1
+      case messages.size
+        when 1 then queue.push(messages.first)
+        else        queue.push(messages)
+      end
       self.notify_writable = true
     end
 
@@ -179,11 +183,13 @@ module EM::ZeroMQ
     # NOTE: We need to read all messages, since it is edge triggered.
     def recv_message
       while socket.readable?
+        messages = []
         loop do
-          message = socket.recv
-          message && on_readable(message)
+          message   = socket.recv
+          messages << message if message
           break unless socket.message_parts?
         end
+        on_readable(messages) unless messages.empty?
       end
     end
 

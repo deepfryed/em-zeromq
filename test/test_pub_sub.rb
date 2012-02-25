@@ -25,7 +25,7 @@ describe 'em-zeromq pub sub' do
       end
     end
 
-    assert_equal 10,        handler.messages.size
-    assert_equal %w(p1 p2), handler.messages.uniq.sort
+    assert_equal 10, handler.messages.size
+    assert_equal [%w(p1), %w(p2)], handler.messages.uniq.sort
   end
 end
