@@ -173,13 +173,12 @@ module EM::ZeroMQ
       case message = queue.shift
         when Array
           message[0..-2].each {|m| socket.send(m, ZMQ::SNDMORE)} if message.size > 1
-          socket.send(message.pop)
+          socket.send(message[-1])
         else
           socket.send(message)
       end
     end
 
-    # TODO: result should be an array since messages could be multi-part.
     # NOTE: We need to read all messages, since it is edge triggered.
     def recv_message
       while socket.readable?
