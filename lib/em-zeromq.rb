@@ -97,9 +97,9 @@ module EM::ZeroMQ
       zmq_socket.getsockopt(ZMQ::RCVMORE)
     end
 
-    def send message
+    def send message, flags = 0
       return false if closed?
-      zmq_socket.send(message, ZMQ::NOBLOCK)
+      zmq_socket.send(message, ZMQ::NOBLOCK | flags)
     end
 
     def recv
@@ -164,10 +164,18 @@ module EM::ZeroMQ
     def send_message
       return unless socket.writable?
       return self.notify_writable = false if queue.empty?
+
       on_writable
-      socket.send(queue.shift)
+      case message = queue.shift
+        when Array
+          message[0..-2].each {|m| socket.send(m, ZMQ::SNDMORE)} if message.size > 1
+          socket.send(message.pop)
+        else
+          socket.send(message)
+      end
     end
 
+    # TODO: result should be an array since messages could be multi-part.
     # NOTE: We need to read all messages, since it is edge triggered.
     def recv_message
       while socket.readable?
