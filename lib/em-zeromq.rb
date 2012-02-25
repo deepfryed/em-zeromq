@@ -147,6 +147,7 @@ module EM::ZeroMQ
 
     def send message
       queue.push(message)
+      self.notify_writable = true
     end
 
     def on_readable message
