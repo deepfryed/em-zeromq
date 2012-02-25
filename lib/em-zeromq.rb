@@ -18,7 +18,7 @@ module EM::ZeroMQ
     end
 
     def close
-      zmq_socket.close
+      zmq_context.close
     end
   end
 
@@ -29,11 +29,11 @@ module EM::ZeroMQ
     WRITABLES = [ZMQ::PUB, ZMQ::PUSH, ZMQ::ROUTER, ZMQ::DEALER, ZMQ::REP, ZMQ::REQ]
 
     def self.map_socket_option name, id
-      self.send(:define_method, "get_#{name}") do
+      define_method("get_#{name}") do
         zmq_socket.getsockopt(id)
       end
 
-      self.send(:define_method, "set_#{name}") do |value|
+      define_method("set_#{name}") do |value|
         zmq_socket.setsockopt(id, value)
       end
     end
@@ -73,13 +73,11 @@ module EM::ZeroMQ
     end
 
     def bind uri
-      ping!
       zmq_socket.bind(uri)
       @connection ? @connection : attach
     end
 
     def connect uri
-      ping!
       zmq_socket.connect(uri)
       @connection ? @connection : attach
     end
@@ -100,12 +98,12 @@ module EM::ZeroMQ
     end
 
     def send message
-      ping!
+      return false if closed?
       zmq_socket.send(message, ZMQ::NOBLOCK)
     end
 
     def recv
-      ping!
+      return false if closed?
       zmq_socket.recv(ZMQ::NOBLOCK)
     end
 
@@ -116,30 +114,23 @@ module EM::ZeroMQ
     end
 
     def subscribe what
-      ping!
       raise TypeError, 'not a ZMQ::SUB socket' if type != ZMQ::SUB
       self.tap{zmq_socket.setsockopt(ZMQ::SUBSCRIBE, what.to_s)}
     end
 
     def unsubscribe what
-      ping!
       raise TypeError, 'not a ZMQ::SUB socket' if type != ZMQ::SUB
       self.tap{zmq_socket.setsockopt(ZMQ::UNSUBSCRIBE, what.to_s)}
     end
 
     def attach handler = nil, *args
-      ping!
       @connection.detach if @connection
-      @connection = em_attach(handler || EM::ZeroMQ::Connection, *args)
+      @connection = set_handler(handler || EM::ZeroMQ::Connection, *args)
     end
 
     private
 
-    def ping!
-      raise IOError, 'socket has been closed' if closed?
-    end
-
-    def em_attach handler, *args
+    def set_handler handler, *args
       EM.watch(@fileno, handler, self, *args) do |connection|
         connection.notify_readable = READABLES.include?(type)
         connection.notify_writable = WRITABLES.include?(type)
@@ -151,13 +142,11 @@ module EM::ZeroMQ
     attr_reader :socket
 
     def initialize socket, *args
-      @queue  = []
-      @socket = socket
+      @queue, @socket  = [], socket
     end
 
     def send message
       queue.push(message)
-      self.notify_writable = true
     end
 
     def on_readable message
@@ -172,8 +161,8 @@ module EM::ZeroMQ
     attr_reader :queue, :on_writable
 
     def send_message
-      return self.notify_writable = false if queue.empty?
       return unless socket.writable?
+      return self.notify_writable = false if queue.empty?
       on_writable
       socket.send(queue.shift)
     end
