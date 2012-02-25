@@ -57,6 +57,7 @@ module EM::ZeroMQ
       @zmq_socket = zmq_socket
       @fileno     = zmq_socket.getsockopt(ZMQ::FD)
       @type       = zmq_socket.getsockopt(ZMQ::TYPE)
+      @closed     = false
 
       # default high water mark.
       set_hwm(1_000_000)
@@ -67,56 +68,76 @@ module EM::ZeroMQ
       end
     end
 
+    def closed?
+      !!@closed
+    end
+
     def bind uri
+      ping!
       zmq_socket.bind(uri)
       @connection ? @connection : attach
     end
 
     def connect uri
+      ping!
       zmq_socket.connect(uri)
       @connection ? @connection : attach
     end
 
     def readable?
+      return false if closed?
       (zmq_socket.getsockopt(ZMQ::EVENTS) & 1) == 1
     end
 
     def writable?
+      return false if closed?
       (zmq_socket.getsockopt(ZMQ::EVENTS) & 2) == 2
     end
 
     def message_parts?
+      return false if closed?
       zmq_socket.getsockopt(ZMQ::RCVMORE)
     end
 
     def send message
+      ping!
       zmq_socket.send(message, ZMQ::NOBLOCK)
     end
 
     def recv
+      ping!
       zmq_socket.recv(ZMQ::NOBLOCK)
     end
 
     def close
+      return false if closed?
+      @closed = true
       zmq_socket.close
     end
 
     def subscribe what
+      ping!
       raise TypeError, 'not a ZMQ::SUB socket' if type != ZMQ::SUB
       self.tap{zmq_socket.setsockopt(ZMQ::SUBSCRIBE, what.to_s)}
     end
 
     def unsubscribe what
+      ping!
       raise TypeError, 'not a ZMQ::SUB socket' if type != ZMQ::SUB
       self.tap{zmq_socket.setsockopt(ZMQ::UNSUBSCRIBE, what.to_s)}
     end
 
     def attach handler = nil, *args
+      ping!
       @connection.detach if @connection
       @connection = em_attach(handler || EM::ZeroMQ::Connection, *args)
     end
 
     private
+
+    def ping!
+      raise IOError, 'socket has been closed' if closed?
+    end
 
     def em_attach handler, *args
       EM.watch(@fileno, handler, self, *args) do |connection|
@@ -152,6 +173,7 @@ module EM::ZeroMQ
 
     def send_message
       return self.notify_writable = false if queue.empty?
+      return unless socket.writable?
       on_writable
       socket.send(queue.shift)
     end
@@ -167,12 +189,7 @@ module EM::ZeroMQ
       end
     end
 
-    def dispatch
-      recv_message if socket.readable?
-      send_message if socket.writable?
-    end
-
-    def notify_readable; dispatch; end
-    def notify_writable; dispatch; end
+    def notify_readable; recv_message end
+    def notify_writable; send_message; recv_message; end # REQ-REP
   end # Connection
 end # EM::ZeroMQ
