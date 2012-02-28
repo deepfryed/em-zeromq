@@ -44,7 +44,6 @@ module EM::ZeroMQ
     map_socket_option :identity,          ZMQ::IDENTITY
     map_socket_option :sndbuf,            ZMQ::SNDBUF
     map_socket_option :rcvbuf,            ZMQ::RCVBUF
-
     map_socket_option :rate,              ZMQ::RATE
     map_socket_option :recovery_ivl,      ZMQ::RECOVERY_IVL
     map_socket_option :mcast_loop,        ZMQ::MCAST_LOOP
@@ -61,11 +60,8 @@ module EM::ZeroMQ
 
       # default high water mark.
       set_hwm(1_000_000)
-
       # setup handler if one provided.
-      if args.first.kind_of?(Class) && args.first < EM::ZeroMQ::Connection
-        @connection = attach(args.shift, *args)
-      end
+      @connection = attach(args.shift, *args) if handler?(args.first) or callback?(args.first)
     end
 
     def closed?
@@ -131,10 +127,23 @@ module EM::ZeroMQ
     private
 
     def set_handler handler, *args
+      unless handler?(handler)
+        args.unshift handler
+        handler = EM::ZeroMQ::CallbackConnection
+      end
+
       EM.watch(@fileno, handler, self, *args) do |connection|
         connection.notify_readable = READABLES.include?(type)
         connection.notify_writable = WRITABLES.include?(type)
       end
+    end
+
+    def handler? object
+      object.kind_of?(Class) && (object == EM::ZeroMQ::Connection || object < EM::ZeroMQ::Connection)
+    end
+
+    def callback? object
+      object.respond_to?(:on_readable) && object.respond_to?(:on_writable)
     end
   end # Socket
 
@@ -195,4 +204,19 @@ module EM::ZeroMQ
     def notify_readable; recv_message end
     def notify_writable; send_message; recv_message; end # REQ-REP
   end # Connection
+
+  class CallbackConnection < Connection
+    def initialize socket, callback, *args
+      @callback = callback
+      super
+    end
+
+    def on_readable messages
+      @callback.on_readable(self, messages)
+    end
+
+    def on_writable
+      @callback.on_writable(self)
+    end
+  end # CallbackConnection
 end # EM::ZeroMQ
