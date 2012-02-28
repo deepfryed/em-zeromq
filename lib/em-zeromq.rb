@@ -202,7 +202,7 @@ module EM::ZeroMQ
     end
 
     def notify_readable; recv_message end
-    def notify_writable; send_message; recv_message; end # REQ-REP
+    def notify_writable; send_message; recv_message; end # REQ-REP needs the extra recv
   end # Connection
 
   class CallbackConnection < Connection
