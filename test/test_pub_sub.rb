@@ -3,14 +3,17 @@ require 'helper'
 describe 'em-zeromq pub sub' do
 
   it 'should work' do
-    messages = []
-    handler  = Class.new(TestHandler)
+    handler = Class.new(TestHandler) do
+      def on_readable m
+        super
+        socket.unsubscribe('') if self.class.messages.size == 10
+      end
+    end
 
     EM.run do
 
       pub1 = context.socket(ZMQ::PUB).bind('tcp://*:5555')
       pub2 = context.socket(ZMQ::PUB).bind('tcp://*:5556')
-
       context.socket(ZMQ::SUB, handler) do |socket|
         socket.subscribe('')
         socket.connect('tcp://*:5555')

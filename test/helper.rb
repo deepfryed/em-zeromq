@@ -1,10 +1,26 @@
 require 'minitest/spec'
+require 'simplecov'
+
+# needs to go here
+
+SimpleCov.start do
+  add_filter '/test/'
+end
+
+at_exit do
+  MiniTest::Spec.context.close
+end
+
 require 'minitest/autorun'
 require 'em-zeromq'
 
 class MiniTest::Spec
-  def context
+  def self.context
     @@context ||= EM::ZeroMQ::Context.new(3)
+  end
+
+  def context
+    MiniTest::Spec.context
   end
 
   def schedule secs, &block
