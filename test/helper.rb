@@ -1,12 +1,12 @@
 require 'minitest/spec'
 require 'simplecov'
 
-# needs to go here
-
+# simplecov stuff needs to go here before autorun is called.
 SimpleCov.start do
   add_filter '/test/'
 end
 
+# close context after all tests are done.
 at_exit do
   MiniTest::Spec.context.close
 end
